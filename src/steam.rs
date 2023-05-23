@@ -321,5 +321,41 @@ impl SteamCSGOInventory {
 }
 
 impl TradeOffer {
-  pub fn new()
+  pub fn new() -> TradeOffer {
+    TradeOffer { newversion: true, version: 4, me: TradeOfferOffer::new(), them: TradeOfferOffer::new() }
+  }
+
+  pub fn add_self_item(&mut self, asset: TradeOfferAsset) {
+    self.me.assets.push(asset);
+  }
+
+  pub fn add_partner_item(&mut self, asset: TradeOfferAsset) {
+    self.them.assets.push(asset);
+  }
+
+  pub fn remove_self_item(&mut self, assetid: String) {
+    if let Some(idx) = self.me.assets.iter().position(|x| *x.assetid != assetid)  {
+      self.me.assets.swap_remove(idx);
+    }
+  }
+
+  pub fn remove_partner_item(&mut self, assetid: String) {
+    if let Some(idx) = self.them.assets.iter().position(|x| *x.assetid != assetid)  {
+      self.them.assets.swap_remove(idx);
+    }
+  }
+
+  pub fn toggle_self_ready(&mut self) {
+    self.me.ready = !self.me.ready;
+  }
+
+  pub fn toggle_partner_ready(&mut self) {
+    self.them.ready = !self.them.ready;
+  }
+}
+
+impl TradeOfferOffer {
+  fn new() -> TradeOfferOffer {
+    TradeOfferOffer { assets: Vec::new(), currency: Vec::new(), ready: false }
+  }
 }
