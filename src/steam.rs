@@ -26,25 +26,25 @@ pub struct RgInventoryItem {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct RgItemDescription {
-  appid: String,
-  classid: String,
-  instanceid: String,
-  icon_url: String,
-  icon_url_large: Option<String>,
-  icon_drag_url: Option<String>,
-  name: String,
-  market_hash_name: String,
-  market_name: String,
-  name_color: String,
-  background_color: String,
+  pub appid: String,
+  pub classid: String,
+  pub instanceid: String,
+  pub icon_url: String,
+  pub icon_url_large: Option<String>,
+  pub icon_drag_url: Option<String>,
+  pub name: String,
+  pub market_hash_name: String,
+  pub market_name: String,
+  pub name_color: String,
+  pub background_color: String,
   #[serde(rename = "type")]
-  _type: String,
-  tradable: i32,
-  marketable: i32,
-  commodity: i32,
-  market_tradable_restriction: String,
-  fraudwarnings: Option<Vec<String>>,
-  cache_expiration: Option<String>,
+  pub _type: String,
+  pub tradable: i32,
+  pub marketable: i32,
+  pub commodity: i32,
+  pub market_tradable_restriction: String,
+  pub fraudwarnings: Option<Vec<String>>,
+  pub cache_expiration: Option<String>,
   descriptions: Vec<RgItemDescriptionDescription>,
   owner_descriptions: Either<Vec<RgItemDescriptionDescription>, String>,
   actions: Option<Vec<ItemAction>>,
@@ -96,7 +96,7 @@ pub struct UnauthorizedResponse {
   error: String
 }
 
-pub enum ItemQuality {
+pub enum ItemRarity {
   ConsumerGrade,
   IndustrialGrade,
   MilspecGrade,
@@ -155,6 +155,26 @@ pub enum ItemType {
   Tool
 }
 
+pub struct TradeOffer {
+  newversion: bool,
+  version: i32,
+  me: TradeOfferOffer,
+  them: TradeOfferOffer
+}
+
+pub struct TradeOfferOffer {
+  assets: Vec<TradeOfferAsset>,
+  currency: Vec<String>,
+  ready: bool
+}
+
+pub struct TradeOfferAsset {
+  appid: String,
+  contextid: String,
+  amount: String,
+  assetid: String
+}
+
 impl SteamCSGOInventory {
   pub async fn new(steam_id: String) -> Result<SteamCSGOInventory, UnauthorizedResponse> {
     dotenv::dotenv().ok();
@@ -192,29 +212,29 @@ impl SteamCSGOInventory {
     None
   }
 
-  pub fn get_all_rarity(&self, quality: ItemQuality) -> Vec<RgItemDescription> {
+  pub fn get_all_rarity(&self, quality: ItemRarity) -> Vec<RgItemDescription> {
     let mut results: Vec<RgItemDescription> = Vec::new();
 
     for (_, value) in &self.rg_descriptions {
       for tag in &value.tags {
         if tag.category_name == "Quality" {
           match quality {
-            ItemQuality::BaseGrade => if tag.name == "Base Grade" {results.push(value.to_owned())},
-            ItemQuality::ConsumerGrade => if tag.name == "Consumer Grade" {results.push(value.to_owned())},
-            ItemQuality::IndustrialGrade => if tag.name == "Industrial Grade" {results.push(value.to_owned())},
-            ItemQuality::MilspecGrade => if tag.name == "Mil-Spec Grade" {results.push(value.to_owned())},
-            ItemQuality::Distinguished => if tag.name == "Distinguished" {results.push(value.to_owned())},
-            ItemQuality::HighGrade => if tag.name == "High Grade" {results.push(value.to_owned())},
-            ItemQuality::Restricted => if tag.name == "Restricted" {results.push(value.to_owned())},
-            ItemQuality::Exceptional => if tag.name == "Exceptional" {results.push(value.to_owned())},
-            ItemQuality::Remarkable => if tag.name == "Remarkable" {results.push(value.to_owned())},
-            ItemQuality::Classified => if tag.name == "Classified" {results.push(value.to_owned())},
-            ItemQuality::Superior => if tag.name == "Superior" {results.push(value.to_owned())},
-            ItemQuality::Exotic => if tag.name == "Exotic" {results.push(value.to_owned())},
-            ItemQuality::Covert => if tag.name == "Covert" {results.push(value.to_owned())},
-            ItemQuality::Extraordinary => if tag.name == "Extraordinary" {results.push(value.to_owned())},
-            ItemQuality::Master => if tag.name == "Master" {results.push(value.to_owned())},
-            ItemQuality::Contraband => if tag.name == "Contraband" {results.push(value.to_owned())},
+            ItemRarity::BaseGrade => if tag.name == "Base Grade" {results.push(value.to_owned())},
+            ItemRarity::ConsumerGrade => if tag.name == "Consumer Grade" {results.push(value.to_owned())},
+            ItemRarity::IndustrialGrade => if tag.name == "Industrial Grade" {results.push(value.to_owned())},
+            ItemRarity::MilspecGrade => if tag.name == "Mil-Spec Grade" {results.push(value.to_owned())},
+            ItemRarity::Distinguished => if tag.name == "Distinguished" {results.push(value.to_owned())},
+            ItemRarity::HighGrade => if tag.name == "High Grade" {results.push(value.to_owned())},
+            ItemRarity::Restricted => if tag.name == "Restricted" {results.push(value.to_owned())},
+            ItemRarity::Exceptional => if tag.name == "Exceptional" {results.push(value.to_owned())},
+            ItemRarity::Remarkable => if tag.name == "Remarkable" {results.push(value.to_owned())},
+            ItemRarity::Classified => if tag.name == "Classified" {results.push(value.to_owned())},
+            ItemRarity::Superior => if tag.name == "Superior" {results.push(value.to_owned())},
+            ItemRarity::Exotic => if tag.name == "Exotic" {results.push(value.to_owned())},
+            ItemRarity::Covert => if tag.name == "Covert" {results.push(value.to_owned())},
+            ItemRarity::Extraordinary => if tag.name == "Extraordinary" {results.push(value.to_owned())},
+            ItemRarity::Master => if tag.name == "Master" {results.push(value.to_owned())},
+            ItemRarity::Contraband => if tag.name == "Contraband" {results.push(value.to_owned())},
           }
         }
       }
@@ -300,4 +320,6 @@ impl SteamCSGOInventory {
   }
 }
 
-
+impl TradeOffer {
+  pub fn new()
+}

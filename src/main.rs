@@ -8,8 +8,12 @@ async fn main() {
 
     let inventory = steam::SteamCSGOInventory::new("76561198047314212".to_string()).await.unwrap();
     
-    let items = inventory.get_all_category(steam::ItemCategory::Normal);
-    println!("{:?}", items);
+    let item = inventory.search_item_name("Melondrama".to_string());
+
+    match item {
+        Some(item) => println!("{}", item.market_name),
+        None => println!("Failed to find item")
+    }
 }
 
 
