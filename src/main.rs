@@ -8,12 +8,16 @@ async fn main() {
 
     let inventory = steam::SteamCSGOInventory::new("76561198047314212".to_string()).await.unwrap();
     
-    let item = inventory.search_item_name("Melondrama".to_string());
+    let item = inventory.search_item_name("Shadow Daggers".to_string());
 
-    match item {
-        Some(item) => println!("{}", item.market_name),
-        None => println!("Failed to find item")
-    }
+    let items = match item {
+        Some(item) => vec![item],
+        None => panic!("Failed to find item")
+    };
+
+    let trade_items = inventory.get_trade_items(items);
+
+    println!("{:?}", trade_items);
 }
 
 

@@ -155,6 +155,7 @@ pub enum ItemType {
   Tool
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct TradeOffer {
   newversion: bool,
   version: i32,
@@ -162,17 +163,33 @@ pub struct TradeOffer {
   them: TradeOfferOffer
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct TradeOfferOffer {
   assets: Vec<TradeOfferAsset>,
   currency: Vec<String>,
   ready: bool
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct TradeOfferAsset {
   appid: String,
   contextid: String,
   amount: String,
   assetid: String
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct TradeOfferForm {
+  sessionid: String,
+  serverid: String,
+  tradeoffermessage: String,
+  json_tradeoffer: TradeOffer,
+  captcha: String,
+  trade_offer_create_params: TradeOfferCreateParams
+}
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct TradeOfferCreateParams {
+  trade_offer_acces_token: String,
 }
 
 impl SteamCSGOInventory {
@@ -199,6 +216,22 @@ impl SteamCSGOInventory {
     };
 
     Ok(inventory)
+  }
+
+  pub fn get_trade_items(&self, items: Vec<RgItemDescription>) -> Vec<TradeOfferAsset>{
+    let mut assets: Vec<TradeOfferAsset> = Vec::new();
+    let mut seen: HashMap<String, bool> = HashMap::new();
+    for item in items {
+      for (key, value) in &self.rg_inventory {
+        let has_seen = seen.get(key).unwrap_or(&false);
+        if !has_seen && item.classid == value.classid && item.instanceid == value.instanceid {
+          assets.push(TradeOfferAsset { appid: "730".to_string(), contextid: "2".to_string(), amount: "1".to_string(), assetid: key.to_string() });
+          seen.insert(key.to_string(), true);
+        }
+      }
+    }
+
+    assets
   }
 
   pub fn search_item_name(&self, item_name: String) -> Option<RgItemDescription> {
