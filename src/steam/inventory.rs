@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
-use reqwest::Client;
+use reqwest::{Client, StatusCode};
 use rand::{Rng, RngCore};
 
 use super::trade::OfferAsset;
@@ -144,26 +144,27 @@ impl Inventory {
     
     let url = format!("https://steamcommunity.com/inventory/{}/730/2?l=english", steam_id);
 
-    let mut data = [0u8; 12];
-    rand::thread_rng().fill_bytes(&mut data); 
-
-    let cookie = format!("sessionid={:02x};", data);
-
     let client = Client::new();
     let res = client.get(url)
-      //.header("Cookie", cookie)
+      .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36")
       .header("Accept", "application/json")
       .send().await.expect("Failed to get response");
 
-    if !res.status().is_success() {
-      return Err(UnauthorizedResponse { success: false, error: "Unauthorized, Please signin.".to_string() })
+    match res.status() {
+      StatusCode::OK => (),
+      StatusCode::TOO_MANY_REQUESTS => return Err(UnauthorizedResponse { success: false, error: "Rate Limited".to_string() }),
+      StatusCode::FORBIDDEN => return Err(UnauthorizedResponse { success: false, error: "Forbidden Access".to_string() }),
+      _ => return Err(UnauthorizedResponse { success: false, error: res.status().to_string() })
     }
     
     let text = res.text().await.expect("Failed to get payload");
-
+    
     let inventory = match serde_json::from_str::<Inventory>(&text) {
       Ok(inv) => inv,
-      Err(e) => panic!("{}",e)
+      Err(e) => {
+        println!("{}",&text);
+        panic!("{}",e)
+      }
     };
 
     Ok(inventory)

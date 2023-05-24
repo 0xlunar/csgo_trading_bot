@@ -6,10 +6,10 @@ mod steam;
 async fn main() {
     dotenv::dotenv().ok();
 
-    let account = steam::account::Account::new(dotenv::var("STEAM_USERNAME").unwrap(), dotenv::var("STEAM_PASSWORD").unwrap(), dotenv::var("STEAM_PRIVATE_KEY").unwrap()).await;
+    // let account = steam::account::Account::new(dotenv::var("STEAM_USERNAME").unwrap(), dotenv::var("STEAM_PASSWORD").unwrap(), dotenv::var("STEAM_PRIVATE_KEY").unwrap()).await;
 
-    println!("{:?}", account);
-    // test_trade().await;
+    // println!("{:?}", account);
+    test_trade().await;
 
 }
 

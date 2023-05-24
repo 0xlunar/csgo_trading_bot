@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, BTreeSet};
+use std::iter::FromIterator;
 use serde::{Deserialize, Serialize};
 use reqwest::Client;
 use dotenv;
@@ -54,8 +55,20 @@ impl TradeOffer {
     self.json_tradeoffer.me.assets.push(asset);
   }
 
+  pub fn add_self_items(&mut self, assets: Vec<OfferAsset>) {
+    for asset in assets {
+      self.json_tradeoffer.me.assets.push(asset);
+    }
+  }
+
   pub fn add_partner_item(&mut self, asset: OfferAsset) {
     self.json_tradeoffer.them.assets.push(asset);
+  }
+
+  pub fn add_partner_items(&mut self, assets: Vec<OfferAsset>) {
+    for asset in assets {
+      self.json_tradeoffer.them.assets.push(asset);
+    }
   }
 
   pub fn remove_self_item(&mut self, assetid: String) {
@@ -64,10 +77,34 @@ impl TradeOffer {
     }
   }
 
+  pub fn remove_self_items(&mut self, assetids: Vec<String>) {
+    for assetid in assetids {
+      if let Some(idx) = self.json_tradeoffer.me.assets.iter().position(|x| *x.assetid != assetid)  {
+        self.json_tradeoffer.me.assets.swap_remove(idx);
+      }
+    }
+    
+  }
+
   pub fn remove_partner_item(&mut self, assetid: String) {
     if let Some(idx) = self.json_tradeoffer.them.assets.iter().position(|x| *x.assetid != assetid)  {
       self.json_tradeoffer.them.assets.swap_remove(idx);
     }
+  }
+
+  pub fn remove_partner_items(&mut self, assetids: Vec<String>) {
+    for assetid in assetids {
+      if let Some(idx) = self.json_tradeoffer.them.assets.iter().position(|x| *x.assetid != assetid)  {
+        self.json_tradeoffer.them.assets.swap_remove(idx);
+      }
+    }
+
+    let to_remove = BTreeSet::from_iter(assetids);
+
+    self.json_tradeoffer.them.assets.retain(|e| );
+
+
+
   }
 
   pub fn toggle_self_ready(&mut self) {
