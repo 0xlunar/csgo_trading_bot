@@ -9,7 +9,7 @@ async fn main() {
     let account = steam::account::Account::new(dotenv::var("STEAM_USERNAME").unwrap(), dotenv::var("STEAM_PASSWORD").unwrap(), dotenv::var("STEAM_PRIVATE_KEY").unwrap()).await;
 
     println!("{:?}", account);
-    //test_trade().await;
+    // test_trade().await;
 
 }
 

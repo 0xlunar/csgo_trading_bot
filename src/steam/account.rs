@@ -1,7 +1,7 @@
 
 use rand;
 use serde::{Deserialize, Serialize};
-use reqwest::Client;
+use reqwest::{Client, header::HeaderMap};
 use rsa::{RsaPublicKey, Pkcs1v15Encrypt};
 use base64::{Engine as _, engine::general_purpose};
 use dotenv;
@@ -35,6 +35,7 @@ pub struct Account {
   token_secure: String,
   auth: String,
   webcookie: String,
+  cookie: String,
 }
 
 #[derive(Deserialize, Clone, Debug, PartialEq)]
@@ -85,6 +86,10 @@ impl Account {
     if !res.status().is_success() {
       panic!("Failed to login to account");
     }
+
+    let resp_headers = res.headers().clone();
+
+    let cookie = resp_headers.iter().filter(|c| *c.0 == "set-cookie").map(|c| c.1.to_str().ok().unwrap().split(" ").next().unwrap()).collect::<String>();
     
     let text = res.text().await.expect("Failed to get payload");
 
@@ -93,7 +98,14 @@ impl Account {
       Err(e) => panic!("{}", e)
     };
 
-    Account { steam_id: login_response.transfer_parameters.steamid, logged_in: login_response.login_complete, token_secure: login_response.transfer_parameters.token_secure, auth: login_response.transfer_parameters.auth, webcookie: login_response.transfer_parameters.webcookie }
+    Account { 
+      steam_id: login_response.transfer_parameters.steamid, 
+      logged_in: login_response.login_complete, 
+      token_secure: login_response.transfer_parameters.token_secure, 
+      auth: login_response.transfer_parameters.auth, 
+      webcookie: login_response.transfer_parameters.webcookie, 
+      cookie 
+    }
 
   }
 }

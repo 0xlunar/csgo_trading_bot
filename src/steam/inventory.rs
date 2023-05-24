@@ -1,7 +1,7 @@
-use dotenv;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use reqwest::Client;
+use rand::{Rng, RngCore};
 
 use super::trade::OfferAsset;
 
@@ -141,13 +141,17 @@ pub enum ItemType {
 
 impl Inventory {
   pub async fn new(steam_id: String) -> Result<Inventory, UnauthorizedResponse> {
-    dotenv::dotenv().ok();
-    let cookie = dotenv::var("STEAM_COOKIE").unwrap();
+    
     let url = format!("https://steamcommunity.com/inventory/{}/730/2?l=english", steam_id);
+
+    let mut data = [0u8; 12];
+    rand::thread_rng().fill_bytes(&mut data); 
+
+    let cookie = format!("sessionid={:02x};", data);
 
     let client = Client::new();
     let res = client.get(url)
-      .header("Cookie", cookie)
+      //.header("Cookie", cookie)
       .header("Accept", "application/json")
       .send().await.expect("Failed to get response");
 
