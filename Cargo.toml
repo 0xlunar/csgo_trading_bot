@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 base64 = "0.21.1"
 dotenv = "0.15.0"
+hex = "0.4.3"
 hmac = "0.12.1"
 num = "0.4.0"
 rand = "0.8.5"

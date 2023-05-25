@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use reqwest::{Client, StatusCode};
 use rand::{Rng, RngCore};
 
-use super::trade::OfferAsset;
+use super::Trade::OfferAsset;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Inventory {

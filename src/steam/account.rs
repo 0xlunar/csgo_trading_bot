@@ -1,14 +1,14 @@
 
 use rand;
 use serde::{Deserialize, Serialize};
-use reqwest::{Client, header::HeaderMap};
+use reqwest::{Client, header::HeaderMap, StatusCode};
 use rsa::{RsaPublicKey, Pkcs1v15Encrypt};
 use base64::{Engine as _, engine::general_purpose};
 use dotenv;
 use steam_guard;
+use super::Inventory::UnauthorizedResponse;
 
 use num::{BigInt, Num};
-use std::str::FromStr;
 
 #[derive(Deserialize, Clone, Debug, PartialEq)]
 pub struct LoginResponse { 
@@ -35,7 +35,7 @@ pub struct Account {
   token_secure: String,
   auth: String,
   webcookie: String,
-  cookie: String,
+  pub cookie: String,
 }
 
 #[derive(Deserialize, Clone, Debug, PartialEq)]
@@ -66,7 +66,7 @@ pub struct SteamGuard {
 }
 
 impl Account {
-  pub async fn new(username: String, password: String, totp_secret: String) -> Account {
+  pub async fn new(username: String, password: String, totp_secret: String) -> Result<Account, UnauthorizedResponse> {
 
     let rsa_key = RSAKey::new(&username).await;
     let encrypted_password = rsa_key.encrypt_password(password);
@@ -74,8 +74,6 @@ impl Account {
     let two_factor_code = SteamGuard::new(totp_secret).generate_code();
 
     let login_data = AccountLoginData::new(username, encrypted_password, two_factor_code, rsa_key.timestamp);
-    
-    println!("{:?}", login_data);
 
     let client = Client::new();
     let res = client.post("https://steamcommunity.com/login/dologin/")
@@ -83,8 +81,11 @@ impl Account {
       .form(&login_data)
       .send().await.expect("Failed to get response");
 
-    if !res.status().is_success() {
-      panic!("Failed to login to account");
+    match res.status() {
+      StatusCode::OK => (),
+      StatusCode::TOO_MANY_REQUESTS => return Err(UnauthorizedResponse { success: false, error: "Rate Limited".to_string() }),
+      StatusCode::FORBIDDEN => return Err(UnauthorizedResponse { success: false, error: "Forbidden Access".to_string() }),
+      _ => return Err(UnauthorizedResponse { success: false, error: res.status().to_string() })
     }
 
     let resp_headers = res.headers().clone();
@@ -98,14 +99,14 @@ impl Account {
       Err(e) => panic!("{}", e)
     };
 
-    Account { 
+    Ok(Account { 
       steam_id: login_response.transfer_parameters.steamid, 
       logged_in: login_response.login_complete, 
       token_secure: login_response.transfer_parameters.token_secure, 
       auth: login_response.transfer_parameters.auth, 
       webcookie: login_response.transfer_parameters.webcookie, 
       cookie 
-    }
+    })
 
   }
 }

@@ -1,3 +1,3 @@
-pub mod inventory;
-pub mod trade;
+pub mod Inventory;
 pub mod account;
+pub mod Trade;
