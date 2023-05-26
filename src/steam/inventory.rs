@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use reqwest::{Client, StatusCode};
-use rand::{Rng, RngCore};
-
 use super::Trade::OfferAsset;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -37,7 +35,7 @@ pub struct AssetDescription {
   pub tradable: i64,
   pub actions: Option<Vec<Action>>,
   pub name: String,
-  pub name_color: String,
+  pub name_color: Option<String>,
   #[serde(rename = "type")]
   pub _type: String,
   pub market_name: String,
@@ -45,6 +43,7 @@ pub struct AssetDescription {
   pub market_actions: Option<Vec<Action>>,
   pub commodity: i64,
   pub market_tradable_restriction: i64,
+  pub market_marketable_restriction: Option<i64>,
   pub marketable: i64,
   pub tags: Vec<Tag>,
   pub market_buy_country_restriction: Option<String>,
@@ -53,7 +52,7 @@ pub struct AssetDescription {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Description {
   #[serde(rename = "type")]
-  pub _type: String,
+  pub _type: Option<String>,
   pub value: String,
   pub color: Option<String>,
 }
@@ -138,11 +137,10 @@ pub enum ItemType {
   Tool
 }
 
-
 impl Inventory {
-  pub async fn new(steam_id: String) -> Result<Inventory, UnauthorizedResponse> {
+  pub async fn new(steam_id: String, game_id: String, context_id: String) -> Result<Inventory, UnauthorizedResponse> {
     
-    let url = format!("https://steamcommunity.com/inventory/{}/730/2?l=english", steam_id);
+    let url = format!("https://steamcommunity.com/inventory/{}/{}/{}?l=english", steam_id, game_id, context_id);
 
     let client = Client::new();
     let res = client.get(url)

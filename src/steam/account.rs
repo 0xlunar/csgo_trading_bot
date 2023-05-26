@@ -90,7 +90,10 @@ impl Account {
 
     let resp_headers = res.headers().clone();
 
-    let cookie = resp_headers.iter().filter(|c| *c.0 == "set-cookie").map(|c| c.1.to_str().ok().unwrap().split(" ").next().unwrap()).collect::<String>();
+    let cookie = resp_headers.iter()
+      .filter(|c| *c.0 == "set-cookie")
+      .map(|c| c.1.to_str().ok().unwrap().split(" ").next().unwrap())
+      .collect::<String>();
     
     let text = res.text().await.expect("Failed to get payload");
 

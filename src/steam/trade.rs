@@ -2,8 +2,6 @@ use std::collections::{HashMap, BTreeSet};
 use std::iter::FromIterator;
 use serde::{Deserialize, Serialize};
 use reqwest::{Client, StatusCode};
-use dotenv;
-use rand::{rngs::StdRng, RngCore, SeedableRng};
 use super::Inventory::UnauthorizedResponse;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -31,15 +29,11 @@ pub struct OfferAsset {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct TradeOffer {
-  sessionid: String,
-  serverid: String,
   pub partner: String,
   pub tradeoffermessage: String,
   pub json_tradeoffer: TradeOfferData,
-  captcha: String,
   pub trade_offer_create_params: TradeOfferCreateParams,
-  //#[serde(skip)]
-  trade_url: String,
+  pub trade_url: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -58,6 +52,14 @@ pub struct TradeOfferCreateParams {
   pub trade_offer_access_token: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct TradeOfferSuccess {
+  pub tradeofferid: String,
+  pub need_mobile_confirmation: Option<bool>,
+  pub needs_email_confirmation: Option<bool>,
+  pub email_domain: Option<String>
+}
+
 impl TradeOffer {
   pub fn new(trade_url: String) -> TradeOffer {
 
@@ -73,9 +75,9 @@ impl TradeOffer {
       None => panic!("Failed to get partner Id")
     };
 
-    let steam_id: u64 = convert_parterid_to_steamid(partnerid);
+    let steam_id: u64 = super::convert_parterid_to_steamid(partnerid);
 
-    TradeOffer { sessionid: "".to_string(), serverid: "1".to_string(), partner: steam_id.to_string(), tradeoffermessage: String::new(), json_tradeoffer: TradeOfferData::new(), captcha: "".to_string(), trade_offer_create_params: TradeOfferCreateParams { trade_offer_access_token: access_token.to_owned() }, trade_url }
+    TradeOffer { partner: steam_id.to_string(), tradeoffermessage: String::new(), json_tradeoffer: TradeOfferData::new(), trade_offer_create_params: TradeOfferCreateParams { trade_offer_access_token: access_token.to_owned() }, trade_url }
   }
 
   pub fn set_trade_message(&mut self, message: String) {
@@ -116,39 +118,18 @@ impl TradeOffer {
     self.json_tradeoffer.them.assets.retain(|a| !to_remove.contains(&a.assetid))
   }
 
-  pub fn toggle_self_ready(&mut self) {
-    self.json_tradeoffer.me.ready = !self.json_tradeoffer.me.ready
-  }
-
-  pub fn toggle_partner_ready(&mut self) {
-    self.json_tradeoffer.them.ready = !self.json_tradeoffer.them.ready
-  }
-
-  pub async fn send(&mut self, cookie: &String) -> Result<(),UnauthorizedResponse> {
+  pub async fn send(&mut self, cookie: &String) -> Result<TradeOfferSuccess, UnauthorizedResponse> {
     let client = Client::new();
 
-    let seed = [0u8; 32];
-    let mut rng: StdRng = SeedableRng::from_seed(seed);
-    let mut bytes = [0u8; 12];
-    rng.fill_bytes(&mut bytes);
-  
-    let session_id = hex::encode(&bytes);
-    self.sessionid = session_id.to_owned();
     
-    let cookie = format!("{}sessionid={};", cookie, session_id);
+    
 
     let json_data = serde_json::to_string(&self.json_tradeoffer).unwrap();
     let token_data = serde_json::to_string(&self.trade_offer_create_params).unwrap();
 
-    let form_data = TradeOfferForm {
-      serverid: self.serverid.to_owned(),
-      sessionid: self.sessionid.to_owned(),
-      partner: self.partner.to_owned(),
-      tradeoffermessage: self.tradeoffermessage.to_owned(),
-      json_tradeoffer: json_data,
-      captcha: self.captcha.to_owned(),
-      trade_offer_create_params: token_data,
-    };
+    let form_data = TradeOfferForm::from(&self);
+
+    let cookie = format!("{}sessionid={};", cookie, &form_data.sessionid);
 
     let res = client.post("https://steamcommunity.com/tradeoffer/new/send")
       .header("Referer", &self.trade_url)
@@ -159,7 +140,6 @@ impl TradeOffer {
     let status = res.status().to_owned();
 
     let text = res.text().await.expect("Failed to get payload");
-    println!("{}", text);
 
     match status {
       StatusCode::OK => (),
@@ -168,15 +148,15 @@ impl TradeOffer {
       _ => return Err(UnauthorizedResponse { success: false, error: status.to_string() })
     }
 
-    let inventory = match serde_json::from_str(&text) {
+    let inventory = match serde_json::from_str::<TradeOfferSuccess>(&text) {
       Ok(inv) => inv,
       Err(e) => {
         println!("{}",&text);
         panic!("{}",e)
       }
     };
-    println!("{:?}", inventory);
-    Ok(())
+
+    Ok(inventory)
   }
 
 }
@@ -199,7 +179,21 @@ impl OfferAsset {
   }
 }
 
-pub fn convert_parterid_to_steamid(partner_id: &String) -> u64 {
-  let id = partner_id.parse::<u64>().unwrap();
-  return id + 76561197960265728; // id + constant = Steamid64
+impl TradeOfferForm {
+  pub fn from(trade_offer: &TradeOffer) -> TradeOfferForm {
+    let session_id = super::create_session_id();
+
+    let json_data = serde_json::to_string(&trade_offer.json_tradeoffer).unwrap();
+    let token_data = serde_json::to_string(&trade_offer.trade_offer_create_params).unwrap();
+
+    TradeOfferForm {
+      serverid: "1".to_string(),
+      sessionid: session_id,
+      partner: trade_offer.partner.to_string(),
+      tradeoffermessage: trade_offer.tradeoffermessage.to_owned(),
+      json_tradeoffer: json_data,
+      captcha: "".to_string(),
+      trade_offer_create_params: token_data,
+    }
+  }
 }
