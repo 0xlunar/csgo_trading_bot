@@ -35,7 +35,7 @@ async fn test_trade() {
     };
 
     let partner_trade_items = partner_inventory.get_trade_items(partner_items);
-    let self_trade_items = partner_inventory.get_trade_items(self_items);
+    let self_trade_items = self_inventory.get_trade_items(self_items);
 
     trade_offer.add_partner_items(partner_trade_items);
     trade_offer.add_self_items(self_trade_items);
