@@ -74,7 +74,7 @@ pub struct Tag {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct UnauthorizedResponse {
-  pub success: bool,
+  pub status: String,
   pub error: String
 }
 
@@ -148,14 +148,13 @@ impl Inventory {
       .header("Accept", "application/json")
       .send().await.expect("Failed to get response");
 
-    match res.status() {
-      StatusCode::OK => (),
-      StatusCode::TOO_MANY_REQUESTS => return Err(UnauthorizedResponse { success: false, error: "Rate Limited".to_string() }),
-      StatusCode::FORBIDDEN => return Err(UnauthorizedResponse { success: false, error: "Forbidden Access".to_string() }),
-      _ => return Err(UnauthorizedResponse { success: false, error: res.status().to_string() })
-    }
-    
+    let status = res.status().to_owned();
     let text = res.text().await.expect("Failed to get payload");
+
+    match status {
+      StatusCode::OK => (),
+      _ => return Err(UnauthorizedResponse { status: status.to_string(), error: text })
+    }
     
     let inventory = match serde_json::from_str::<Inventory>(&text) {
       Ok(inv) => inv,

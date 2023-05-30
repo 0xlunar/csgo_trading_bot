@@ -40,6 +40,8 @@ async fn test_trade() {
     trade_offer.add_partner_items(partner_trade_items);
     trade_offer.add_self_items(self_trade_items);
 
+    println!("trade -> {:?}", trade_offer);
+
     match trade_offer.send(&account.cookie).await {
         Ok(trade) => println!("{:?}", trade),
         Err(e) => println!("{:?}", e)

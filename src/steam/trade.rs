@@ -121,12 +121,6 @@ impl TradeOffer {
   pub async fn send(&mut self, cookie: &String) -> Result<TradeOfferSuccess, UnauthorizedResponse> {
     let client = Client::new();
 
-    
-    
-
-    let json_data = serde_json::to_string(&self.json_tradeoffer).unwrap();
-    let token_data = serde_json::to_string(&self.trade_offer_create_params).unwrap();
-
     let form_data = TradeOfferForm::from(&self);
 
     let cookie = format!("{}sessionid={};", cookie, &form_data.sessionid);
@@ -137,16 +131,13 @@ impl TradeOffer {
       .form(&form_data)
       .send().await.expect("Failed to send request");
 
-    let status = res.status().to_owned();
-
-    let text = res.text().await.expect("Failed to get payload");
-
-    match status {
-      StatusCode::OK => (),
-      StatusCode::TOO_MANY_REQUESTS => return Err(UnauthorizedResponse { success: false, error: "Rate Limited".to_string() }),
-      StatusCode::FORBIDDEN => return Err(UnauthorizedResponse { success: false, error: "Forbidden Access".to_string() }),
-      _ => return Err(UnauthorizedResponse { success: false, error: status.to_string() })
-    }
+      let status = res.status().to_owned();
+      let text = res.text().await.expect("Failed to get payload");
+  
+      match status {
+        StatusCode::OK => (),
+        _ => return Err(UnauthorizedResponse { status: status.to_string(), error: text })
+      }
 
     let inventory = match serde_json::from_str::<TradeOfferSuccess>(&text) {
       Ok(inv) => inv,
